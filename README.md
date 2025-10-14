@@ -42,7 +42,22 @@
       <input type="password" id="passwordInput" placeholder="Enter password" required><br>
       <button type="submit" aria-label="Login to the app">Login</button>
     </form>
-    <p>Don't have an account? <a href="#" id="signupLink">Sign up</a></p>
+    <p><a href="#" id="showSignupLink" aria-label="Switch to signup form">Don't have an account? Sign up</a></p>
+  </div>
+
+  <!-- Signup Page -->
+  <div id="signupPage" class="form-container hidden">
+    <h2>Create Account</h2>
+    <form id="signupForm">
+      <label>Email:</label>
+      <input type="email" id="signupEmailInput" placeholder="Enter email" required><br>
+      <label>Password:</label>
+      <input type="password" id="signupPasswordInput" placeholder="Enter password (min 6 characters)" required><br>
+      <label>Confirm Password:</label>
+      <input type="password" id="confirmPasswordInput" placeholder="Confirm password" required><br>
+      <button type="submit" aria-label="Create account">Sign Up</button>
+    </form>
+    <p><a href="#" id="showLoginLink" aria-label="Switch to login form">Already have an account? Login</a></p>
   </div>
 
   <h1>PCR-EPR Member Management</h1>
@@ -288,7 +303,10 @@
     // DOM Elements
     const loginPage = document.getElementById('loginPage');
     const loginForm = document.getElementById('loginForm');
-    const signupLink = document.getElementById('signupLink');
+    const signupPage = document.getElementById('signupPage');
+    const signupForm = document.getElementById('signupForm');
+    const showSignupLink = document.getElementById('showSignupLink');
+    const showLoginLink = document.getElementById('showLoginLink');
     const logoutBtn = document.getElementById('logoutBtn');
     const startBtn = document.getElementById('startBtn');
     const viewDataBtn = document.getElementById('viewDataBtn');
@@ -345,6 +363,7 @@
     auth.onAuthStateChanged(user => {
       if (user) {
         loginPage.classList.add('hidden');
+        signupPage.classList.add('hidden');
         startBtn.classList.remove('hidden');
         viewDataBtn.classList.remove('hidden');
         logoutBtn.classList.remove('hidden');
@@ -352,6 +371,7 @@
         loadArchive();
       } else {
         loginPage.classList.remove('hidden');
+        signupPage.classList.add('hidden');
         startBtn.classList.add('hidden');
         viewDataBtn.classList.add('hidden');
         logoutBtn.classList.add('hidden');
@@ -371,21 +391,42 @@
       const password = document.getElementById('passwordInput').value;
       try {
         await auth.signInWithEmailAndPassword(email, password);
+        alert('Logged in successfully!');
       } catch (e) {
         alert('Login failed: ' + e.message);
       }
     });
 
-    signupLink.addEventListener('click', async e => {
+    signupForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const email = document.getElementById('emailInput').value;
-      const password = document.getElementById('passwordInput').value;
+      const email = document.getElementById('signupEmailInput').value;
+      const password = document.getElementById('signupPasswordInput').value;
+      const confirmPassword = document.getElementById('confirmPasswordInput').value;
+      if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+      }
       try {
         await auth.createUserWithEmailAndPassword(email, password);
-        alert('Account created! Please log in.');
+        alert('Account created successfully! Please log in.');
+        signupPage.classList.add('hidden');
+        loginPage.classList.remove('hidden');
+        signupForm.reset();
       } catch (e) {
         alert('Sign up failed: ' + e.message);
       }
+    });
+
+    showSignupLink.addEventListener('click', e => {
+      e.preventDefault();
+      loginPage.classList.add('hidden');
+      signupPage.classList.remove('hidden');
+    });
+
+    showLoginLink.addEventListener('click', e => {
+      e.preventDefault();
+      signupPage.classList.add('hidden');
+      loginPage.classList.remove('hidden');
     });
 
     logoutBtn.addEventListener('click', async () => {
@@ -559,6 +600,7 @@
         renderChart();
       } catch (e) {
         console.error('Error loading members:', e);
+        alert('Error loading members: ' + e.message);
       }
     }
 
@@ -569,6 +611,7 @@
         renderArchive();
       } catch (e) {
         console.error('Error loading archive:', e);
+        alert('Error loading archive: ' + e.message);
       }
     }
 
