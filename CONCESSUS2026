@@ -4,38 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PCR-EPR Member Management</title>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyEXAMPLE",
-    authDomain: "mywebapp.firebaseapp.com",
-    databaseURL: "https://mywebapp-default-rtdb.firebaseio.com",
-    projectId: "mywebapp",
-    storageBucket: "mywebapp.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcdef123456"
-  };
-
-  // Tangiza Firebase App
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  // Urugero: Kubika data
-  function andikaData() {
-    const izina = document.getElementById("izina").value;
-    push(ref(db, 'abantu/'), { izina });
-  }
-
-  // Urugero: Gusoma data
-  const refAbantu = ref(db, 'abantu/');
-  onValue(refAbantu, (snapshot) => {
-    const data = snapshot.val();
-    document.getElementById("output").textContent = JSON.stringify(data, null, 2);
-  });
-</script>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body { font-family:"Times New Roman",sans-serif; background:#b0cdea; text-align:center; margin:20px;}
@@ -56,6 +24,8 @@ label.filter-label {margin-left:5px;}
 .close-btn {float:right; cursor:pointer; font-weight:bold; color:#f00;}
 #chartContainer {width:80%; margin:auto;}
 canvas {max-width:100%;}
+.error {border-color: red;}
+.error-message {color: red; font-size: 12px; margin-top: 2px;}
 </style>
 </head>
 <body>
@@ -81,14 +51,19 @@ canvas {max-width:100%;}
 <input type="text" id="autoNo" readonly><br>
 <label>Ishuri:</label>
 <select id="schoolSelect" aria-label="Hitamo Ishuri"></select><br>
+<div id="schoolSelectError" class="error-message hidden"></div>
 <label>Itorero ry'ibanze:</label>
 <select id="schoolSelect2" required aria-label="Hitamo Itorero ry'ibanze"><option value="">--Hitamo Itorero--</option></select><br>
+<div id="schoolSelect2Error" class="error-message hidden"></div>
 <label>Irangamuntu:</label>
-<input type="text" placeholder="Shyiramo numero y'irangamuntu" id="idInput" pattern="[0-9]{16}" title="Irangamuntu igizwe n’imibare 16" required><br>
+<input type="text" placeholder="Shyiramo numero y'irangamuntu" id="idInput" pattern="[1-9][0-9]{15}" title="Irangamuntu igizwe n’imibare 16 itangira n’umubare utari 0" required><br>
+<div id="idInputError" class="error-message hidden"></div>
 <label>Amazina yombi:</label>
 <input type="text" placeholder="Shyiramo amazina" id="nameInput" required><br>
+<div id="nameInputError" class="error-message hidden"></div>
 <label>Igitsina:</label>
 <select id="genderSelect" required aria-label="Hitamo Igitsina"><option value="">--Hitamo--</option><option>Gabo</option><option>Gore</option></select><br>
+<div id="genderSelectError" class="error-message hidden"></div>
 <label>Irangamimerere:</label>
 <select id="MartalstatusSelect" required aria-label="Hitamo Irangamimerere">
   <option value="">---Hitamo---</option>
@@ -106,7 +81,8 @@ canvas {max-width:100%;}
 <label>Itariki y'amavuko:</label>
 <select id="yearSelect" required aria-label="Hitamo Umwaka"><option value="">--Hitamo Umwaka--</option></select><br>
 <label>Telephone:</label>
-<input type="tel" placeholder="Shyiramo nimero ya telephone" id="phoneInput" pattern="[0-9]{10}" title="Injiza nimero ya telefone ifite imibare 10" required><br>
+<input type="tel" placeholder="Shyiramo nimero ya telephone" id="phoneInput" pattern="07[0-9]{8}" title="Injiza nimero ya telefone itangira na 07 ifite imibare 10" required><br>
+<div id="phoneInputError" class="error-message hidden"></div>
 <label>Urwego rw'amashuri yize:</label>
 <select id="educationSelect" required aria-label="Hitamo urwego rw'amashuri yize">
   <option value="">---Hitamo---</option>
@@ -119,6 +95,7 @@ canvas {max-width:100%;}
   <option value="PHD">PHD</option>
   <option value="Professor">Professor</option>
 </select><br>
+<div id="educationSelectError" class="error-message hidden"></div>
 <label>Icyo akora:</label>
 <select id="jobStatusSelect" required aria-label="Hitamo icyo akora">
   <option value="">---Hitamo---</option>
@@ -128,6 +105,7 @@ canvas {max-width:100%;}
   <option value="Akorera leta">Akorera leta</option>
   <option value="Akorera NGOs">Akorera NGOs</option>
 </select><br>
+<div id="jobStatusSelectError" class="error-message hidden"></div>
 <button type="button" id="backToPresby" aria-label="Subira ku hitamo presbytery">Subira Inyuma</button>
 <button type="submit" aria-label="Ohereza amakuru">Ohereza</button>
 </form>
@@ -147,11 +125,12 @@ canvas {max-width:100%;}
 <input type="text" placeholder="Shyiramo izina ry'uwo bashyingiranwe" id="spouseInput" aria-label="Izina ry'uwo bashyingiranwe"><br>
 <label>Umwaka bashyingiranwe:</label>
 <select id="marriageYearSelect" aria-label="Hitamo umwaka bashyingiranwe"><option value="">--Hitamo Umwaka--</option></select><br>
+<div id="marriageYearSelectError" class="error-message hidden"></div>
 <label>Umubare w'abana:</label>
 <input type="number" placeholder="Shyiramo umubare w'abana" id="childrenInput" min="0" aria-label="Umubare w'abana"><br>
+<div id="childrenInputError" class="error-message hidden"></div>
 <div id="childrenNamesContainer">
   <label>Amazina y'Abana:</label><br>
-  <!-- Child name inputs will be added dynamically -->
 </div>
 <button type="button" id="addChildName" aria-label="Ongera Izina ry'Umwana">Ongera Umwana</button>
 <button type="button" id="backToDataFromFamily" aria-label="Subira ku Abakristo Data">Subira Inyuma</button>
@@ -163,6 +142,7 @@ canvas {max-width:100%;}
 <!-- Data Page -->
 <div id="dataPage" class="hidden">
 <h2>Abakristo Saved Data</h2>
+<div id="searchContainer"></div> <!-- New: Search input will be added here -->
 <label class="filter-label">Sura kuri Presbytery:</label>
 <select id="filterPresby" aria-label="Sura kuri Presbytery"><option value="">--Byose--</option></select>
 <label class="filter-label">Sura kuri Paruwasi:</label>
@@ -190,6 +170,7 @@ canvas {max-width:100%;}
 </table>
 <div id="pagination"></div>
 </div>
+<div id="activityLogContainer"></div> <!-- New: Activity log -->
 <button id="backToMainFromData" aria-label="Subira ku rubuga rw'ibanze">Subira Inyuma</button>
 </div>
 
@@ -223,8 +204,10 @@ canvas {max-width:100%;}
 <select id="transferParish" aria-label="Hitamo Paruwasi"></select><br>
 <label>Ishuri:</label>
 <select id="transferSchool" aria-label="Hitamo Ishuri"></select><br>
+<div id="transferSchoolError" class="error-message hidden"></div>
 <label>Itorero ry'ibanze:</label>
 <select id="transferSchool2" aria-label="Hitamo Itorero ry'ibanze"></select><br>
+<div id="transferSchool2Error" class="error-message hidden"></div>
 <label>Urwego rw'amashuri yize:</label>
 <select id="transferEducation" aria-label="Hitamo urwego rw'amashuri yize">
   <option value="">---Hitamo---</option>
@@ -237,6 +220,7 @@ canvas {max-width:100%;}
   <option value="PHD">PHD</option>
   <option value="Professor">Professor</option>
 </select><br>
+<div id="transferEducationError" class="error-message hidden"></div>
 <label>Icyo akora:</label>
 <select id="transferJob" aria-label="Hitamo icyo akora">
   <option value="">---Hitamo---</option>
@@ -246,15 +230,17 @@ canvas {max-width:100%;}
   <option value="Akorera leta">Akorera leta</option>
   <option value="Akorera NGOs">Akorera NGOs</option>
 </select><br>
+<div id="transferJobError" class="error-message hidden"></div>
 <label>Uwo bashyingiranwe:</label>
 <input type="text" id="transferSpouse" aria-label="Izina ry'uwo bashyingiranwe"><br>
 <label>Umwaka bashyingiranwe:</label>
 <select id="transferMarriageYear" aria-label="Hitamo umwaka bashyingiranwe"><option value="">--Hitamo Umwaka--</option></select><br>
+<div id="transferMarriageYearError" class="error-message hidden"></div>
 <label>Umubare w'abana:</label>
 <input type="number" id="transferChildren" min="0" aria-label="Umubare w'abana"><br>
+<div id="transferChildrenError" class="error-message hidden"></div>
 <div id="transferChildrenNamesContainer">
   <label>Amazina y'Abana:</label><br>
-  <!-- Child name inputs will be added dynamically -->
 </div>
 <button type="button" id="addTransferChildName" aria-label="Ongera Izina ry'Umwana">Ongera Umwana</button>
 <button id="transferSave" aria-label="Bika Amakuru">Bika</button>
@@ -265,10 +251,12 @@ canvas {max-width:100%;}
 // Data
 let members = [];
 let archive = [];
+let activityLog = [];
+let saveCount = 0;
 try {
   members = JSON.parse(localStorage.getItem('members')) || [];
   archive = JSON.parse(localStorage.getItem('archive')) || [];
-  // Migrate existing data to include education, job, and family fields
+  activityLog = JSON.parse(localStorage.getItem('activityLog')) || [];
   members = members.map(m => ({ 
     ...m, 
     education: m.education || '', 
@@ -277,7 +265,7 @@ try {
     spouse: m.spouse || '', 
     marriageYear: m.marriageYear || '', 
     children: m.children || '0',
-    childNames: m.childNames || [] // New field for child names
+    childNames: m.childNames || []
   }));
   archive = archive.map(m => ({ 
     ...m, 
@@ -289,16 +277,19 @@ try {
     children: m.children || '0',
     childNames: m.childNames || []
   }));
-  localStorage.setItem('members', JSON.stringify(members));
-  localStorage.setItem('archive', JSON.stringify(archive));
+  saveToLocalStorage('members', members);
+  saveToLocalStorage('archive', archive);
+  saveToLocalStorage('activityLog', activityLog);
 } catch (e) {
   console.error('Error accessing localStorage:', e);
+  alert('Habaye ikibazo mu kubika amakuru. Kuramo amakuru muri CSV kugira ngo urinde kuyapoteza.');
 }
 
 let currentPresbytery = '', currentParish = '';
 let editingIndex = -1;
 let transferIndex = -1;
 let familyEditIndex = -1;
+let chartInstance = null;
 
 const presbyteries = {
   "GISENYI": ["Gacuba", "Kayove", "Rugarama", "Karisimbi", "Kigarama", "Bushaka", "Rubavu", "Kinanira", "Nyabirasi", "Mukingo", "Kijote", "Nkuri", "Gahondogo", "Ruhengeri", "Kidaho", "Nyarutovu", "Ramba", "Mutake", "Karambo", "Giciye", "Nganzo", "Buganamana"],
@@ -369,6 +360,73 @@ const transferCancel = document.getElementById('transferCancel');
 const closeTransfer = document.getElementById('closeTransfer');
 const autoNoField = document.getElementById('autoNo');
 const memberForm = document.getElementById('memberForm');
+const searchContainer = document.getElementById('searchContainer');
+const activityLogContainer = document.getElementById('activityLogContainer');
+
+// Simulated Server Sync (Replace with real API endpoint, e.g., xAI API at https://x.ai/api)
+async function saveToServer(data, endpoint) {
+  try {
+    // Example: Replace with actual fetch to your server or xAI API
+    const response = await fetch(`https://api.example.com/${endpoint}`, {  // Change to real URL
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Network error');
+    return await response.json();
+  } catch (e) {
+    console.error(`Error syncing with server: ${e}`);
+    alert('Habaye ikibazo mu kohereza amakuru kuri server. Bika muri localStorage.');
+    return null;
+  }
+}
+
+// Utility function for localStorage with server sync
+async function saveToLocalStorage(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    const serverResponse = await saveToServer(data, key);
+    if (serverResponse) {
+      console.log(`Successfully synced ${key} to server`);
+    }
+  } catch (e) {
+    console.error(`Error saving ${key} to localStorage:`, e);
+    alert('Habaye ikibazo mu kubika amakuru. Kuramo amakuru muri CSV kugira ngo urinde kuyapoteza.');
+  }
+}
+
+// Auto backup to CSV every 10 saves
+function autoBackupToCSV() {
+  if (++saveCount % 10 === 0) {
+    document.getElementById('downloadCSV').click();
+    alert('Backup ya CSV yabitswe byikoresha!');
+  }
+}
+
+// Show error message with accessibility
+function showError(elementId, message) {
+  const errorElement = document.getElementById(`${elementId}Error`);
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+    errorElement.setAttribute('aria-live', 'polite');
+    const input = document.getElementById(elementId);
+    input.classList.add('error');
+    input.setAttribute('aria-describedby', `${elementId}Error`);
+  }
+}
+
+// Clear error message
+function clearError(elementId) {
+  const errorElement = document.getElementById(`${elementId}Error`);
+  if (errorElement) {
+    errorElement.textContent = '';
+    errorElement.classList.add('hidden');
+    const input = document.getElementById(elementId);
+    input.classList.remove('error');
+    input.removeAttribute('aria-describedby');
+  }
+}
 
 // Populate dropdowns
 schools.forEach(s => {
@@ -394,7 +452,10 @@ function updateLocalChurchesDropdown() {
     });
   }
 }
-schoolSelect.onchange = updateLocalChurchesDropdown;
+schoolSelect.onchange = () => {
+  updateLocalChurchesDropdown();
+  clearError('schoolSelect');
+};
 
 for (let y = 1900; y <= 2025; y++) {
   let o = document.createElement('option');
@@ -424,12 +485,13 @@ function getNextMemberNo() {
   return allNos.length ? Math.max(...allNos) + 1 : 1;
 }
 
-// Dynamic Child Name Inputs for Family Form
+// Dynamic Child Name Inputs for Family Form with unique IDs
 function updateChildNameInputs(numChildren, existingNames = []) {
   childrenNamesContainer.innerHTML = '<label>Amazina y\'Abana:</label><br>';
   for (let i = 0; i < numChildren; i++) {
     const input = document.createElement('input');
     input.type = 'text';
+    input.id = `child-name-${i}`; // Unique ID
     input.placeholder = `Izina ry'Umwana ${i + 1}`;
     input.value = existingNames[i] || '';
     input.className = 'child-name-input';
@@ -442,6 +504,7 @@ function updateChildNameInputs(numChildren, existingNames = []) {
 childrenInput.addEventListener('change', function() {
   const numChildren = parseInt(childrenInput.value) || 0;
   updateChildNameInputs(numChildren, members[familyEditIndex]?.childNames || []);
+  clearError('childrenInput');
 });
 
 addChildNameBtn.onclick = function() {
@@ -456,6 +519,7 @@ function updateTransferChildNameInputs(numChildren, existingNames = []) {
   for (let i = 0; i < numChildren; i++) {
     const input = document.createElement('input');
     input.type = 'text';
+    input.id = `transfer-child-name-${i}`; // Unique ID
     input.placeholder = `Izina ry'Umwana ${i + 1}`;
     input.value = existingNames[i] || '';
     input.className = 'transfer-child-name-input';
@@ -468,6 +532,7 @@ function updateTransferChildNameInputs(numChildren, existingNames = []) {
 transferChildren.addEventListener('change', function() {
   const numChildren = parseInt(transferChildren.value) || 0;
   updateTransferChildNameInputs(numChildren, members[transferIndex]?.childNames || []);
+  clearError('transferChildren');
 });
 
 addTransferChildNameBtn.onclick = function() {
@@ -497,6 +562,8 @@ viewDataBtn.onclick = () => {
   updateFilterParish();
   renderTable();
   renderChart();
+  addSearchFunctionality();
+  renderActivityLog();
 };
 
 backToMainFromData.onclick = () => {
@@ -554,23 +621,91 @@ function renderPresbyteries() {
   }
 }
 
-// Member Form Submit
-memberForm.addEventListener('submit', function(e) {
+// Real-time input validation
+document.getElementById('idInput').addEventListener('input', function() {
+  const idInput = this.value;
+  if (!/^[1-9][0-9]{15}$/.test(idInput)) {
+    showError('idInput', 'Irangamuntu igomba kuba imibare 16 itangira n’umubare utari 0');
+  } else {
+    clearError('idInput');
+  }
+});
+
+document.getElementById('phoneInput').addEventListener('input', function() {
+  const phoneInput = this.value;
+  if (!/^07[0-9]{8}$/.test(phoneInput)) {
+    showError('phoneInput', 'Numero ya telefone igomba kuba imibare 10 itangira na 07');
+  } else if (members.some(m => m.phone === phoneInput && members.indexOf(m) !== editingIndex)) {
+    showError('phoneInput', 'Iyi numero ya telefone isanzwe mu bice byabitswe!');
+  } else {
+    clearError('phoneInput');
+  }
+});
+
+document.getElementById('nameInput').addEventListener('input', function() {
+  const nameInput = this.value;
+  if (nameInput.trim() === '') {
+    showError('nameInput', 'Izina rigomba kuba ryanditswe!');
+  } else {
+    clearError('nameInput');
+  }
+});
+
+// Member Form Submit with full validation
+memberForm.addEventListener('submit', async function(e) {
   e.preventDefault();
   const idInput = document.getElementById('idInput').value;
-  if (members.some(m => m.id === idInput && members.indexOf(m) !== editingIndex)) {
-    alert('Irangamuntu iri mu bice byabitswe! Hitamo irindi.');
-    return;
-  }
+  const phoneInput = document.getElementById('phoneInput').value;
+  const nameInput = document.getElementById('nameInput').value;
+  const gender = document.getElementById('genderSelect').value;
   const selectedSchool = document.getElementById('schoolSelect').value;
   const selectedLocalChurch = document.getElementById('schoolSelect2').value;
   const selectedEducation = document.getElementById('educationSelect').value;
   const selectedJob = document.getElementById('jobStatusSelect').value;
-  const selectedMaritalStatus = document.getElementById('MartalstatusSelect').value;
-  if (!selectedSchool || !selectedLocalChurch || !selectedEducation || !selectedJob) {
-    alert('Ugomba guhitamo Ishuri, Itorero ry\'ibanze, Urwego rw\'amashuri, na Icyo akora!');
-    return;
+
+  let hasError = false;
+  if (!/^[1-9][0-9]{15}$/.test(idInput)) {
+    showError('idInput', 'Irangamuntu igomba kuba imibare 16 itangira n’umubare utari 0');
+    hasError = true;
   }
+  if (members.some(m => m.id === idInput && members.indexOf(m) !== editingIndex)) {
+    showError('idInput', 'Irangamuntu iri mu bice byabitswe! Hitamo irindi.');
+    hasError = true;
+  }
+  if (!/^07[0-9]{8}$/.test(phoneInput)) {
+    showError('phoneInput', 'Numero ya telefone igomba kuba imibare 10 itangira na 07');
+    hasError = true;
+  }
+  if (members.some(m => m.phone === phoneInput && members.indexOf(m) !== editingIndex)) {
+    showError('phoneInput', 'Iyi numero ya telefone isanzwe mu bice byabitswe!');
+    hasError = true;
+  }
+  if (!nameInput.trim()) {
+    showError('nameInput', 'Izina rigomba kuba ryanditswe!');
+    hasError = true;
+  }
+  if (!gender) {
+    showError('genderSelect', 'Ugomba guhitamo Igitsina!');
+    hasError = true;
+  }
+  if (!selectedSchool) {
+    showError('schoolSelect', 'Ugomba guhitamo Ishuri!');
+    hasError = true;
+  }
+  if (!selectedLocalChurch) {
+    showError('schoolSelect2', 'Ugomba guhitamo Itorero ry\'ibanze!');
+    hasError = true;
+  }
+  if (!selectedEducation) {
+    showError('educationSelect', 'Ugomba guhitamo Urwego rw\'amashuri!');
+    hasError = true;
+  }
+  if (!selectedJob) {
+    showError('jobStatusSelect', 'Ugomba guhitamo Icyo akora!');
+    hasError = true;
+  }
+  if (hasError) return;
+
   const memberData = {
     presbytery: currentPresbytery,
     parish: currentParish,
@@ -578,12 +713,12 @@ memberForm.addEventListener('submit', function(e) {
     school: selectedSchool,
     school2: selectedLocalChurch,
     id: idInput,
-    name: document.getElementById('nameInput').value,
-    gender: document.getElementById('genderSelect').value,
-    maritalStatus: selectedMaritalStatus,
+    name: nameInput,
+    gender: gender,
+    maritalStatus: document.getElementById('MartalstatusSelect').value,
     baptism: document.getElementById('baptismSelect').value,
     birthYear: document.getElementById('yearSelect').value,
-    phone: document.getElementById('phoneInput').value,
+    phone: phoneInput,
     education: selectedEducation,
     job: selectedJob,
     spouse: '',
@@ -599,48 +734,49 @@ memberForm.addEventListener('submit', function(e) {
     members[editingIndex] = memberData;
     editingIndex = -1;
     alert('Amakuru yahinduwe!');
+    logActivity('edit', `Edited member ${memberData.name} (ID: ${memberData.id})`);
   } else {
     members.push(memberData);
     alert('Amakuru yabitswe!');
+    logActivity('add', `Added member ${memberData.name} (ID: ${memberData.id})`);
   }
-  try {
-    localStorage.setItem('members', JSON.stringify(members));
-  } catch (e) {
-    console.error('Error saving to localStorage:', e);
-  }
+  await saveToLocalStorage('members', members);
+  autoBackupToCSV();
   memberForm.reset();
   autoNoField.value = getNextMemberNo();
   updateFilterParish();
   renderTable();
   renderChart();
+  renderActivityLog();
 });
 
-// Family Form Submit
-familyForm.addEventListener('submit', function(e) {
+// Family Form Submit with child names validation
+familyForm.addEventListener('submit', async function(e) {
   e.preventDefault();
   if (familyEditIndex >= 0) {
     const maritalStatus = members[familyEditIndex].maritalStatus;
     const spouse = spouseInput.value;
     const marriageYear = marriageYearSelect.value;
     const children = childrenInput.value || '0';
-    const childNames = Array.from(document.querySelectorAll('.child-name-input')).map(input => input.value.trim()).filter(name => name !== '');
+    const childNames = Array.from(document.querySelectorAll('.child-name-input')).map(input => input.value.trim());
     if ((maritalStatus === 'arubatse' || maritalStatus === 'divorce') && marriageYear === '') {
-      alert('Igihe bashyingiranwe kirakenewe iyo irangamimerere ni Arubatse cyangwa Divorce!');
+      showError('marriageYearSelect', 'Igihe bashyingiranwe kirakenewe iyo irangamimerere ni Arubatse cyangwa Divorce!');
       return;
     }
-    if (parseInt(children) < childNames.length) {
-      alert('Umubare w\'abana ugomba kuba fungana na amazina yabana wuzuye!');
+    if (parseInt(children) > 0 && childNames.some(name => name === '')) {
+      showError('childrenInput', 'Amazina y’abana yose agomba kuba yanditswe iyo umubare w’abana uri > 0!');
+      return;
+    }
+    if (parseInt(children) !== childNames.filter(name => name !== '').length) {
+      showError('childrenInput', 'Umubare w\'abana ugomba kuba ungana n\'amazina y\'abana wanditswe!');
       return;
     }
     members[familyEditIndex].spouse = spouse;
     members[familyEditIndex].marriageYear = marriageYear;
     members[familyEditIndex].children = children;
-    members[familyEditIndex].childNames = childNames;
-    try {
-      localStorage.setItem('members', JSON.stringify(members));
-    } catch (e) {
-      console.error('Error saving to localStorage:', e);
-    }
+    members[familyEditIndex].childNames = childNames.filter(name => name !== '');
+    await saveToLocalStorage('members', members);
+    logActivity('family_update', `Updated family for ${members[familyEditIndex].name}`);
     alert('Amakuru y\'umuryango yabitswe!');
     familyForm.reset();
     updateChildNameInputs(0);
@@ -648,15 +784,16 @@ familyForm.addEventListener('submit', function(e) {
     dataPage.classList.remove('hidden');
     tableContainer.classList.remove('hidden');
     renderTable();
+    renderActivityLog();
   }
 });
 
-// Render Members Table with Pagination
-function renderTable(page = 1, pageSize = 10) {
+// Render Members Table with Pagination (supports filtered data)
+function renderTable(page = 1, pageSize = 10, dataSource = members) {
   const presbyFilter = filterPresby.value;
   const parishFilter = filterParish.value;
   tableBody.innerHTML = '';
-  const filtered = members.filter(m =>
+  const filtered = dataSource.filter(m =>
     (presbyFilter === '' || m.presbytery === presbyFilter) &&
     (parishFilter === '' || m.parish === parishFilter)
   );
@@ -708,16 +845,14 @@ function renderTable(page = 1, pageSize = 10) {
       delBtn.textContent = 'Siba';
       delBtn.className = 'action-btn';
       delBtn.setAttribute('aria-label', `Siba amakuru ya ${m.name}`);
-      delBtn.onclick = function() {
+      delBtn.onclick = async function() {
         if (confirm(`Urashaka gusiba ${m.name}?`)) {
           members.splice(members.indexOf(m), 1);
-          try {
-            localStorage.setItem('members', JSON.stringify(members));
-          } catch (e) {
-            console.error('Error saving to localStorage:', e);
-          }
+          await saveToLocalStorage('members', members);
+          logActivity('delete', `Deleted member ${m.name}`);
           renderTable(page);
           renderChart();
+          renderActivityLog();
         }
       };
       tdActions.appendChild(delBtn);
@@ -725,17 +860,15 @@ function renderTable(page = 1, pageSize = 10) {
       archBtn.textContent = 'Bika mu Bubiko';
       archBtn.className = 'action-btn';
       archBtn.setAttribute('aria-label', `Bika ${m.name} mu bubiko`);
-      archBtn.onclick = function() {
+      archBtn.onclick = async function() {
         archive.push(m);
         members.splice(members.indexOf(m), 1);
-        try {
-          localStorage.setItem('members', JSON.stringify(members));
-          localStorage.setItem('archive', JSON.stringify(archive));
-        } catch (e) {
-          console.error('Error saving to localStorage:', e);
-        }
+        await saveToLocalStorage('members', members);
+        await saveToLocalStorage('archive', archive);
+        logActivity('archive', `Archived member ${m.name}`);
         renderTable(page);
         renderChart();
+        renderActivityLog();
       };
       tdActions.appendChild(archBtn);
       const transBtn = document.createElement('button');
@@ -769,9 +902,10 @@ function renderTable(page = 1, pageSize = 10) {
   }
   const pagination = document.getElementById('pagination');
   pagination.innerHTML = `
-    <button onclick="renderTable(${page - 1})" ${page === 1 ? 'disabled' : ''} aria-label="Subira ku ipage ry'inyuma">Ibanze</button>
+    <button onclick="renderTable(${page - 1}, 10, filtered)" ${page === 1 ? 'disabled' : ''} aria-label="Subira ku ipage ry'inyuma">Ibanze</button>
     <span>Page ${page}</span>
-    <button onclick="renderTable(${page + 1})" ${end >= filtered.length ? 'disabled' : ''} aria-label="Genda ku ipage rikurikira">Ibikurikira</button>
+    <input type="number" min="1" max="${Math.ceil(filtered.length / pageSize)}" value="${page}" onchange="renderTable(this.value, 10, filtered)" aria-label="Hitamo ipage">
+    <button onclick="renderTable(${page + 1}, 10, filtered)" ${end >= filtered.length ? 'disabled' : ''} aria-label="Genda ku ipage rikurikira">Ibikurikira</button>
   `;
 }
 
@@ -802,10 +936,12 @@ function updateFilterParish() {
 filterPresby.onchange = () => {
   updateFilterParish();
   renderTable();
+  renderChart();
 };
 
 filterParish.onchange = () => {
   renderTable();
+  renderChart();
 };
 
 // Toggle Table
@@ -894,17 +1030,15 @@ function renderArchive() {
     const resBtn = document.createElement('button');
     resBtn.textContent = 'Garura';
     resBtn.setAttribute('aria-label', `Garura ${m.name} mu bubiko`);
-    resBtn.onclick = function() {
+    resBtn.onclick = async function() {
       members.push(m);
       archive.splice(archive.indexOf(m), 1);
-      try {
-        localStorage.setItem('members', JSON.stringify(members));
-        localStorage.setItem('archive', JSON.stringify(archive));
-      } catch (e) {
-        console.error('Error saving to localStorage:', e);
-      }
+      await saveToLocalStorage('members', members);
+      await saveToLocalStorage('archive', archive);
+      logActivity('restore', `Restored member ${m.name} from archive`);
       renderArchive();
       renderChart();
+      renderActivityLog();
     };
     tdActions.appendChild(resBtn);
     tr.appendChild(tdActions);
@@ -932,6 +1066,7 @@ function openTransferModal(m) {
       o.textContent = par;
       transferParish.appendChild(o);
     });
+    clearError('transferPresby');
   };
   transferPresby.onchange();
   transferParish.value = m.parish;
@@ -970,10 +1105,11 @@ function openTransferModal(m) {
         transferSchool2.appendChild(o);
       });
     }
+    clearError('transferSchool');
   };
 }
 
-transferSave.onclick = function() {
+transferSave.onclick = async function() {
   if (transferIndex >= 0) {
     const selectedSchool = transferSchool.value;
     const selectedLocalChurch = transferSchool2.value;
@@ -983,18 +1119,41 @@ transferSave.onclick = function() {
     const selectedMarriageYear = transferMarriageYear.value;
     const selectedChildren = transferChildren.value || '0';
     const selectedChildNames = Array.from(document.querySelectorAll('.transfer-child-name-input')).map(input => input.value.trim()).filter(name => name !== '');
-    if (!selectedSchool || !selectedLocalChurch || !selectedEducation || !selectedJob) {
-      alert('Ugomba guhitamo Ishuri, Itorero ry\'ibanze, Urwego rw\'amashuri, na Icyo akora!');
-      return;
+    let hasError = false;
+    if (!selectedSchool) {
+      showError('transferSchool', 'Ugomba guhitamo Ishuri!');
+      hasError = true;
+    }
+    if (!selectedLocalChurch) {
+      showError('transferSchool2', 'Ugomba guhitamo Itorero ry\'ibanze!');
+      hasError = true;
+    }
+    if (!selectedEducation) {
+      showError('transferEducation', 'Ugomba guhitamo Urwego rw\'amashuri!');
+      hasError = true;
+    }
+    if (!selectedJob) {
+      showError('transferJob', 'Ugomba guhitamo Icyo akora!');
+      hasError = true;
+    }
+    if (transferPresby.value === members[transferIndex].presbytery && transferParish.value === members[transferIndex].parish) {
+      alert('Umukristo ntashobora koherezwa mu isibo na paruwasi bimwe na byo asanzweho!');
+      hasError = true;
     }
     if ((members[transferIndex].maritalStatus === 'arubatse' || members[transferIndex].maritalStatus === 'divorce') && selectedMarriageYear === '') {
-      alert('Igihe bashyingiranwe kirakenewe iyo irangamimerere ni Arubatse cyangwa Divorce!');
-      return;
+      showError('transferMarriageYear', 'Igihe bashyingiranwe kirakenewe iyo irangamimerere ni Arubatse cyangwa Divorce!');
+      hasError = true;
     }
-    if (parseInt(selectedChildren) < selectedChildNames.length) {
-      alert('Umubare w\'abana ugomba kuba fungana na amazina yabana wuzuye!');
-      return;
+    if (parseInt(selectedChildren) > 0 && selectedChildNames.some(name => name === '')) {
+      showError('transferChildren', 'Amazina y’abana yose agomba kuba yanditswe!');
+      hasError = true;
     }
+    if (parseInt(selectedChildren) !== selectedChildNames.length) {
+      showError('transferChildren', 'Umubare w\'abana ugomba kuba ungana n\'amazina y\'abana wanditswe!');
+      hasError = true;
+    }
+    if (hasError) return;
+
     members[transferIndex].presbytery = transferPresby.value;
     members[transferIndex].parish = transferParish.value;
     members[transferIndex].school = selectedSchool;
@@ -1005,13 +1164,11 @@ transferSave.onclick = function() {
     members[transferIndex].marriageYear = selectedMarriageYear;
     members[transferIndex].children = selectedChildren;
     members[transferIndex].childNames = selectedChildNames;
-    try {
-      localStorage.setItem('members', JSON.stringify(members));
-    } catch (e) {
-      console.error('Error saving to localStorage:', e);
-    }
+    await saveToLocalStorage('members', members);
+    logActivity('transfer', `Transferred member ${members[transferIndex].name} to ${transferPresby.value}/${transferParish.value}`);
     alert('Kohereza byagenze neza!');
     renderChart();
+    renderActivityLog();
   }
   transferIndex = -1;
   closeTransferModal();
@@ -1024,42 +1181,120 @@ closeTransfer.onclick = closeTransferModal;
 function closeTransferModal() {
   overlay.classList.add('hidden');
   transferModal.classList.add('hidden');
+  clearError('transferSchool');
+  clearError('transferSchool2');
+  clearError('transferEducation');
+  clearError('transferJob');
+  clearError('transferMarriageYear');
+  clearError('transferChildren');
 }
 
-// Render Bar Chart
-let chartInstance = null;
+// Optimized Render Bar Chart (update instead of destroy)
 function renderChart() {
   const ctx = document.getElementById('memberChart').getContext('2d');
-  const presbyCounts = Object.keys(presbyteries).map(presby => ({
+  const presbyFilter = filterPresby.value;
+  const parishFilter = filterParish.value;
+  const filteredMembers = members.filter(m =>
+    (presbyFilter === '' || m.presbytery === presbyFilter) &&
+    (parishFilter === '' || m.parish === parishFilter)
+  );
+  const presbyCounts = (presbyFilter ? [presbyFilter] : Object.keys(presbyteries)).map(presby => ({
     presby,
-    count: members.filter(m => m.presbytery === presby).length
+    count: filteredMembers.filter(m => m.presbytery === presby).length
   }));
   const labels = presbyCounts.map(p => p.presby);
   const data = presbyCounts.map(p => p.count);
-  if (chartInstance) {
-    chartInstance.destroy();
+
+  if (!data.some(d => d > 0)) {
+    document.getElementById('chartContainer').innerHTML = '<canvas id="memberChart"></canvas><p style="text-align: center;">Nta makuru yabonetse kuri ikarita</p>';
+    return;
   }
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Umubare w’Abakristo muri Presbytery',
-        data: data,
-        backgroundColor: '#12984c',
-        borderColor: '#1ac564',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Umubare w’Abakristo' } },
-        x: { title: { display: true, text: 'Presbytery' } }
+
+  if (chartInstance) {
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data = data;
+    chartInstance.update();
+  } else {
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Umubare w’Abakristo muri Presbytery',
+          data: data,
+          backgroundColor: '#12984c',
+          borderColor: '#1ac564',
+          borderWidth: 1
+        }]
       },
-      plugins: { legend: { display: true } }
+      options: {
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Umubare w’Abakristo' } },
+          x: { title: { display: true, text: 'Presbytery' } }
+        },
+        plugins: { legend: { display: true } }
+      }
+    });
+  }
+}
+
+// Activity Log
+function logActivity(action, details) {
+  const logEntry = {
+    action,
+    details,
+    timestamp: new Date().toISOString()
+  };
+  activityLog.push(logEntry);
+  saveToLocalStorage('activityLog', activityLog);
+}
+
+function renderActivityLog() {
+  activityLogContainer.innerHTML = '<h3>Ibikorwa Byakorewe</h3><ul id="activityLogList"></ul>';
+  const logList = document.getElementById('activityLogList');
+  logList.innerHTML = activityLog.map(log => `
+    <li>${log.action}: ${log.details} at ${new Date(log.timestamp).toLocaleString('rw-RW')}</li>
+  `).join('');
+}
+
+// Search Functionality with Debounce
+function addSearchFunctionality() {
+  if (searchContainer.innerHTML === '') {
+    searchContainer.innerHTML = `
+      <label for="searchInput">Sura Umukristo:</label>
+      <input type="text" id="searchInput" placeholder="Shyiramo izina, irangamuntu, cyangwa telephone" aria-label="Sura Umukristo">
+    `;
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', debounce(function() {
+      const query = this.value.toLowerCase();
+      const filtered = members.filter(m =>
+        m.name.toLowerCase().includes(query) ||
+        m.id.includes(query) ||
+        m.phone.includes(query)
+      );
+      renderTable(1, 10, filtered);
+    }, 300));
+  }
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// Keyboard Navigation for Buttons
+document.querySelectorAll('button').forEach(btn => {
+  btn.setAttribute('tabindex', '0');
+  btn.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      btn.click();
     }
   });
-}
+});
 
 // Initial
 updateFilterParish();
@@ -1069,6 +1304,3 @@ renderChart();
 
 </body>
 </html>
-
-
-
