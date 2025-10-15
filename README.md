@@ -5,33 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PCR-EPR Member Management</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
   <style>
-    body { font-family:"Times New Roman",sans-serif; background:#b0cdea; text-align:center; margin:20px;}
-    h1,h2 { color:#12984c; }
-    select,input {padding:8px; margin:5px 0; width:60%; border:1px solid #ccc; border-radius:5px;}
-    button {padding:6px 12px; margin:4px; border:none; border-radius:5px; cursor:pointer;}
-    button:hover {background:#14ac56;color:#fff;}
-    .hidden {display:none;}
-    .form-container {background:#f4f6f8; padding:20px; border-radius:8px; margin-top:20px; display:inline-block; text-align:left;}
-    table {margin:auto; background:#fff; border-collapse: collapse; width:100%; display:block; overflow-x:auto;}
-    table, th, td {border:1px solid #999;}
-    th, td {padding:5px; text-align:center; white-space:nowrap;}
-    #memberListContainer, #archivePage, #transferModal, #chartContainer, #dataPage, #familyInfoPage {margin-top:20px;}
-    label.filter-label {margin-left:5px;}
-    .action-btn {margin:0 2px;}
-    #transferModal {position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#f4f6f8; padding:20px; border-radius:8px; z-index:1000; min-width:300px;}
-    #overlay {position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(242, 199, 199, 0.4); z-index:900;}
-    .close-btn {float:right; cursor:pointer; font-weight:bold; color:#f00;}
-    #chartContainer {width:80%; margin:auto;}
-    canvas {max-width:100%;}
+    body { font-family: "Times New Roman", sans-serif; background: #b0cdea; text-align: center; margin: 20px; }
+    h1, h2 { color: #12984c; }
+    select, input { padding: 8px; margin: 5px 0; width: 60%; border: 1px solid #ccc; border-radius: 5px; }
+    button { padding: 6px 12px; margin: 4px; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #14ac56; color: #fff; }
+    .hidden { display: none; }
+    .form-container { background: #f4f6f8; padding: 20px; border-radius: 8px; margin-top: 20px; display: inline-block; text-align: left; }
+    table { margin: auto; background: #fff; border-collapse: collapse; width: auto; max-width: 100%; display: block; overflow-x: auto; }
+    table, th, td { border: 1px solid #999; }
+    th, td { padding: 5px; text-align: center; white-space: nowrap; }
+    #memberListContainer, #archivePage, #transferModal, #chartContainer, #dataPage, #familyInfoPage { margin-top: 20px; }
+    label.filter-label { margin-left: 5px; }
+    .action-btn { margin: 0 2px; }
+    #transferModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #f4f6f8; padding: 20px; border-radius: 8px; z-index: 1000; min-width: 300px; }
+    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(242, 199, 199, 0.4); z-index: 900; }
+    .close-btn { float: right; cursor: pointer; font-weight: bold; color: #f00; }
+    #chartContainer { width: 80%; margin: auto; }
+    canvas { max-width: 100%; }
+    .verification-message { color: #12984c; margin-top: 10px; }
   </style>
 </head>
 <body>
-
   <!-- Login Page -->
   <div id="loginPage" class="form-container">
     <h2>Login to PCR-EPR</h2>
@@ -43,6 +42,7 @@
       <button type="submit" aria-label="Login to the app">Login</button>
     </form>
     <p><a href="#" id="showSignupLink" aria-label="Switch to signup form">Don't have an account? Sign up</a></p>
+    <p id="verificationMessage" class="verification-message hidden">Please verify your email with the OTP before logging in.</p>
   </div>
 
   <!-- Signup Page -->
@@ -57,6 +57,17 @@
       <input type="password" id="confirmPasswordInput" placeholder="Confirm password" required><br>
       <button type="submit" aria-label="Create account">Sign Up</button>
     </form>
+    <!-- OTP Verification Section -->
+    <div id="otpSection" class="form-container hidden">
+      <h2>Verify OTP</h2>
+      <form id="otpForm">
+        <label>Enter OTP:</label>
+        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" pattern="[0-9]{6}" required><br>
+        <button type="submit" aria-label="Verify OTP">Verify OTP</button>
+      </form>
+      <p><a href="#" id="resendOtpLink" aria-label="Resend OTP">Resend OTP</a></p>
+    </div>
+    <p id="otpMessage" class="verification-message hidden">A 6-digit OTP has been sent to your email. Please enter it to verify your account.</p>
     <p><a href="#" id="showLoginLink" aria-label="Switch to login form">Already have an account? Login</a></p>
   </div>
 
@@ -91,7 +102,7 @@
         <label>Igitsina:</label>
         <select id="genderSelect" required aria-label="Hitamo Igitsina"><option value="">--Hitamo--</option><option>Gabo</option><option>Gore</option></select><br>
         <label>Irangamimerere:</label>
-        <select id="MartalstatusSelect" required aria-label="Hitamo Irangamimerere">
+        <select id="maritalStatusSelect" required aria-label="Hitamo Irangamimerere">
           <option value="">---Hitamo---</option>
           <option value="ingaragu">Ingaragu</option>
           <option value="arubatse">Arubatse</option>
@@ -218,11 +229,11 @@
     <label>Presbytery:</label>
     <select id="transferPresby" aria-label="Hitamo Presbytery"></select><br>
     <label>Paruwasi:</label>
-    <select id="transferParish" aria-label="Hitamo Paruwasi"></select><br>
+    <select id="transferParish" aria-label="Hitamo Paruwasi"><option value="">--Hitamo--</option></select><br>
     <label>Ishuri:</label>
     <select id="transferSchool" aria-label="Hitamo Ishuri"></select><br>
     <label>Itorero ry'ibanze:</label>
-    <select id="transferSchool2" aria-label="Hitamo Itorero ry'ibanze"></select><br>
+    <select id="transferSchool2" aria-label="Hitamo Itorero ry'ibanze"><option value="">--Hitamo Itorero--</option></select><br>
     <label>Urwego rw'amashuri yize:</label>
     <select id="transferEducation" aria-label="Hitamo urwego rw'amashuri yize">
       <option value="">---Hitamo---</option>
@@ -259,18 +270,27 @@
   </div>
 
   <script>
-    // Firebase Configuration (Replace with your Firebase project config)
+    // Firebase Configuration
+    // REPLACE THIS: Go to Firebase Console > Project Settings > General > Your apps > Web app
+    // Copy the firebaseConfig object and paste it here
     const firebaseConfig = {
-      apiKey: "your-api-key",
-      authDomain: "your-project-id.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project-id.appspot.com",
-      messagingSenderId: "your-messaging-sender-id",
-      appId: "your-app-id"
+      apiKey: "your-api-key", // Replace with your actual API key
+      authDomain: "your-project-id.firebaseapp.com", // Replace with your project’s authDomain
+      projectId: "your-project-id", // Replace with your project ID
+      storageBucket: "your-project-id.appspot.com", // Replace with your storage bucket
+      messagingSenderId: "your-messaging-sender-id", // Replace with your messaging sender ID
+      appId: "your-app-id" // Replace with your app ID
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log('Firebase initialized successfully');
+    } catch (e) {
+      console.error('Firebase initialization error:', e);
+      alert('Error initializing Firebase. Please check your configuration: ' + e.message);
+      throw e;
+    }
     const db = firebase.firestore();
     const auth = firebase.auth();
 
@@ -281,6 +301,7 @@
     let editingIndex = -1;
     let transferIndex = -1;
     let familyEditIndex = -1;
+    let tempUser = null; // Store temp user data during OTP verification
 
     const presbyteries = {
       "GISENYI": ["Gacuba", "Kayove", "Rugarama", "Karisimbi", "Kigarama", "Bushaka", "Rubavu", "Kinanira", "Nyabirasi", "Mukingo", "Kijote", "Nkuri", "Gahondogo", "Ruhengeri", "Kidaho", "Nyarutovu", "Ramba", "Mutake", "Karambo", "Giciye", "Nganzo", "Buganamana"],
@@ -305,6 +326,9 @@
     const loginForm = document.getElementById('loginForm');
     const signupPage = document.getElementById('signupPage');
     const signupForm = document.getElementById('signupForm');
+    const otpSection = document.getElementById('otpSection');
+    const otpForm = document.getElementById('otpForm');
+    const resendOtpLink = document.getElementById('resendOtpLink');
     const showSignupLink = document.getElementById('showSignupLink');
     const showLoginLink = document.getElementById('showLoginLink');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -358,20 +382,30 @@
     const closeTransfer = document.getElementById('closeTransfer');
     const autoNoField = document.getElementById('autoNo');
     const memberForm = document.getElementById('memberForm');
+    const otpMessage = document.getElementById('otpMessage');
+    const verificationMessage = document.getElementById('verificationMessage');
 
-    // Authentication
+    // Authentication with Email Verification
     auth.onAuthStateChanged(user => {
       if (user) {
-        loginPage.classList.add('hidden');
-        signupPage.classList.add('hidden');
-        startBtn.classList.remove('hidden');
-        viewDataBtn.classList.remove('hidden');
-        logoutBtn.classList.remove('hidden');
-        loadMembers();
-        loadArchive();
+        if (user.emailVerified) {
+          loginPage.classList.add('hidden');
+          signupPage.classList.add('hidden');
+          otpSection.classList.add('hidden');
+          startBtn.classList.remove('hidden');
+          viewDataBtn.classList.remove('hidden');
+          logoutBtn.classList.remove('hidden');
+          verificationMessage.classList.add('hidden');
+          loadMembers();
+          loadArchive();
+        } else {
+          verificationMessage.classList.remove('hidden');
+          auth.signOut(); // Force logout if not verified
+        }
       } else {
         loginPage.classList.remove('hidden');
         signupPage.classList.add('hidden');
+        otpSection.classList.add('hidden');
         startBtn.classList.add('hidden');
         viewDataBtn.classList.add('hidden');
         logoutBtn.classList.add('hidden');
@@ -387,33 +421,152 @@
 
     loginForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const email = document.getElementById('emailInput').value;
+      const email = document.getElementById('emailInput').value.trim();
       const password = document.getElementById('passwordInput').value;
+      if (!email || !password) {
+        alert('Please enter both email and password.');
+        return;
+      }
       try {
-        await auth.signInWithEmailAndPassword(email, password);
-        alert('Logged in successfully!');
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        if (!userCredential.user.emailVerified) {
+          verificationMessage.classList.remove('hidden');
+          await auth.signOut();
+          alert('Please verify your email with the OTP before logging in.');
+        } else {
+          alert('Logged in successfully!');
+          loginForm.reset();
+        }
       } catch (e) {
-        alert('Login failed: ' + e.message);
+        let errorMessage;
+        switch (e.code) {
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email format.';
+            break;
+          case 'auth/user-not-found':
+            errorMessage = 'No user found with this email. Please sign up.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many attempts. Please try again later.';
+            break;
+          default:
+            errorMessage = 'Login failed: ' + e.message;
+        }
+        alert(errorMessage);
+        console.error('Login error:', e);
       }
     });
 
     signupForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const email = document.getElementById('signupEmailInput').value;
+      const email = document.getElementById('signupEmailInput').value.trim();
       const password = document.getElementById('signupPasswordInput').value;
       const confirmPassword = document.getElementById('confirmPasswordInput').value;
+      if (!email || !password || !confirmPassword) {
+        alert('Please fill in all fields.');
+        return;
+      }
       if (password !== confirmPassword) {
         alert('Passwords do not match!');
         return;
       }
       try {
-        await auth.createUserWithEmailAndPassword(email, password);
-        alert('Account created successfully! Please log in.');
-        signupPage.classList.add('hidden');
-        loginPage.classList.remove('hidden');
-        signupForm.reset();
+        // Create user but don't sign in yet
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        tempUser = { uid: userCredential.user.uid, email };
+        await auth.signOut(); // Sign out to prevent auto-login
+        // Call Cloud Function to send OTP
+        const response = await fetch('https://us-central1-your-project-id.cloudfunctions.net/sendOtp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await response.json();
+        if (result.success) {
+          signupForm.classList.add('hidden');
+          otpSection.classList.remove('hidden');
+          otpMessage.classList.remove('hidden');
+          alert('Account created! A 6-digit OTP has been sent to your email.');
+        } else {
+          throw new Error(result.error || 'Failed to send OTP');
+        }
       } catch (e) {
-        alert('Sign up failed: ' + e.message);
+        let errorMessage;
+        switch (e.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email is already registered. Please log in or use a different email.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email format.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password must be at least 6 characters long.';
+            break;
+          default:
+            errorMessage = 'Sign up failed: ' + e.message;
+        }
+        alert(errorMessage);
+        console.error('Signup error:', e);
+      }
+    });
+
+    otpForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!otp || otp.length !== 6) {
+        alert('Please enter a valid 6-digit OTP.');
+        return;
+      }
+      try {
+        const response = await fetch('https://us-central1-your-project-id.cloudfunctions.net/verifyOtp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: tempUser.email, otp })
+        });
+        const result = await response.json();
+        if (result.success) {
+          // Sign in the user to update emailVerified
+          await auth.signInWithEmailAndPassword(tempUser.email, document.getElementById('signupPasswordInput').value);
+          await auth.currentUser.updateProfile({ emailVerified: true });
+          alert('OTP verified! You can now log in.');
+          otpSection.classList.add('hidden');
+          loginPage.classList.remove('hidden');
+          signupPage.classList.add('hidden');
+          otpForm.reset();
+          tempUser = null;
+        } else {
+          alert(result.error || 'Invalid or expired OTP.');
+        }
+      } catch (e) {
+        alert('OTP verification failed: ' + e.message);
+        console.error('OTP verification error:', e);
+      }
+    });
+
+    resendOtpLink.addEventListener('click', async e => {
+      e.preventDefault();
+      if (!tempUser) {
+        alert('No pending signup. Please sign up again.');
+        return;
+      }
+      try {
+        const response = await fetch('https://us-central1-your-project-id.cloudfunctions.net/sendOtp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: tempUser.email })
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('OTP resent successfully. Check your email.');
+        } else {
+          alert(result.error || 'Failed to resend OTP.');
+        }
+      } catch (e) {
+        alert('Error resending OTP: ' + e.message);
+        console.error('Resend OTP error:', e);
       }
     });
 
@@ -421,17 +574,26 @@
       e.preventDefault();
       loginPage.classList.add('hidden');
       signupPage.classList.remove('hidden');
+      otpSection.classList.add('hidden');
+      verificationMessage.classList.add('hidden');
     });
 
     showLoginLink.addEventListener('click', e => {
       e.preventDefault();
       signupPage.classList.add('hidden');
+      otpSection.classList.add('hidden');
       loginPage.classList.remove('hidden');
+      otpMessage.classList.add('hidden');
     });
 
     logoutBtn.addEventListener('click', async () => {
-      await auth.signOut();
-      alert('Logged out successfully');
+      try {
+        await auth.signOut();
+        alert('Logged out successfully');
+      } catch (e) {
+        alert('Logout failed: ' + e.message);
+        console.error('Logout error:', e);
+      }
     });
 
     // Populate dropdowns
@@ -460,7 +622,7 @@
     }
     schoolSelect.onchange = updateLocalChurchesDropdown;
 
-    for (let y = 1900; y <= 2025; y++) {
+    for (let y = 1950; y <= 2025; y++) {
       let o = document.createElement('option');
       o.textContent = y;
       o.value = y;
@@ -484,13 +646,19 @@
 
     // Generate unique member number
     async function getNextMemberNo() {
-      const allMembers = await db.collection('members').get();
-      const allArchive = await db.collection('archive').get();
-      const allNos = [
-        ...allMembers.docs.map(doc => parseInt(doc.data().no)),
-        ...allArchive.docs.map(doc => parseInt(doc.data().no))
-      ].filter(n => !isNaN(n));
-      return allNos.length ? Math.max(...allNos) + 1 : 1;
+      try {
+        const allMembers = await db.collection('members').get();
+        const allArchive = await db.collection('archive').get();
+        const allNos = [
+          ...allMembers.docs.map(doc => parseInt(doc.data().no)),
+          ...allArchive.docs.map(doc => parseInt(doc.data().no))
+        ].filter(n => !isNaN(n));
+        return allNos.length ? Math.max(...allNos) + 1 : 1;
+      } catch (e) {
+        console.error('Error generating member number:', e);
+        alert('Error generating member number: ' + e.message);
+        return 1;
+      }
     }
 
     // Dynamic Child Name Inputs for Family Form
@@ -679,7 +847,7 @@
         id: idInput,
         name: document.getElementById('nameInput').value,
         gender: document.getElementById('genderSelect').value,
-        maritalStatus: document.getElementById('MartalstatusSelect').value,
+        maritalStatus: document.getElementById('maritalStatusSelect').value,
         baptism: document.getElementById('baptismSelect').value,
         birthYear: document.getElementById('yearSelect').value,
         phone: document.getElementById('phoneInput').value,
@@ -789,7 +957,7 @@
             document.getElementById('idInput').value = m.id;
             document.getElementById('nameInput').value = m.name;
             document.getElementById('genderSelect').value = m.gender;
-            document.getElementById('MartalstatusSelect').value = m.maritalStatus;
+            document.getElementById('maritalStatusSelect').value = m.maritalStatus;
             document.getElementById('baptismSelect').value = m.baptism;
             document.getElementById('yearSelect').value = m.birthYear;
             document.getElementById('phoneInput').value = m.phone;
@@ -872,14 +1040,11 @@
         <button onclick="renderTable(${page + 1})" ${end >= filtered.length ? 'disabled' : ''} aria-label="Genda ku ipage rikurikira">Ibikurikira</button>
       `;
     }
+    window.renderTable = renderTable;
 
     // Filter Parish
     function updateFilterParish() {
-      filterParish.innerHTML = '';
-      let defaultOpt = document.createElement('option');
-      defaultOpt.value = '';
-      defaultOpt.textContent = '--Byose--';
-      filterParish.appendChild(defaultOpt);
+      filterParish.innerHTML = '<option value="">--Byose--</option>';
       const presby = filterPresby.value;
       let parishesList = [];
       if (presby === '') {
@@ -1015,7 +1180,7 @@
     function openTransferModal(m) {
       overlay.classList.remove('hidden');
       transferModal.classList.remove('hidden');
-      transferPresby.innerHTML = '';
+      transferPresby.innerHTML = '<option value="">--Hitamo--</option>';
       Object.keys(presbyteries).forEach(p => {
         let o = document.createElement('option');
         o.value = p;
@@ -1024,7 +1189,7 @@
       });
       transferPresby.value = m.presbytery;
       transferPresby.onchange = function() {
-        transferParish.innerHTML = '';
+        transferParish.innerHTML = '<option value="">--Hitamo--</option>';
         presbyteries[transferPresby.value].forEach(par => {
           let o = document.createElement('option');
           o.value = par;
@@ -1034,7 +1199,7 @@
       };
       transferPresby.onchange();
       transferParish.value = m.parish;
-      transferSchool.innerHTML = '';
+      transferSchool.innerHTML = '<option value="">--Hitamo--</option>';
       schools.forEach(s => {
         let o = document.createElement('option');
         o.value = s;
@@ -1167,3 +1332,4 @@
   </script>
 </body>
 </html>
+
