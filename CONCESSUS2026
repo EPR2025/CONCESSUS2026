@@ -4,6 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PCR-EPR Member Management</title>
+<style>
+    /* Style ya buri div */
+    .header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .menu {
+      background-color: #f0f0f0;
+      padding: 10px;
+    }
+
+    .menu a {
+      margin-right: 15px;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .content {
+      background-color: #ffffff;
+      padding: 20px;
+      border: 1px solid #ddd;
+      margin-top: 10px;
+    }
+
+    .footer {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      margin-top: 20px;
+    }
+  </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body { font-family:"Times New Roman",sans-serif; background:#b0cdea; text-align:center; margin:20px;}
